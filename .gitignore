@@ -105,3 +105,6 @@ venv.bak/
 
 # JetBrains
 .idea
+
+# data .jpgs
+data/**/*.jpg

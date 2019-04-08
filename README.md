@@ -27,3 +27,9 @@ Remember to unzip all subarchives as well, so that your file tree looks like:
    imageSetKey.csv
    other .jpg files
 ```
+
+After this go to `./data` folder and run:
+```
+python split_data.py
+```
+Additional files `train.csv` and `test.csv` will be created.
