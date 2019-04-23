@@ -1,4 +1,5 @@
 import os
+import argparse
 import numpy as np
 # import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,6 +8,22 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Input, Dense, Dropout
 from keras.models import Model
 from skimage.transform import resize
+
+
+## CLI args
+## Currently only 1 train is supported, rest is WIP
+'''
+parser = argparse.ArgumentParser(description='SNR Lego bricks classification 2019.')
+parser.add_argument('task', type=int, help='1|2|3|4', default='1')
+
+args = parser.parse_args()
+task = args.task
+
+'''
+
+task = 1
+
+## The actual learning
 
 DATA_PATH = './data/'
 IMG_PATH = os.path.join(DATA_PATH, 'Cropped Images')
@@ -103,9 +120,26 @@ base_model = MobileNetV2(
 for layer in base_model.layers:
     layer.trainable = False  # trainable has to be false in order to freeze the layers
 
-x = Dense(256, activation='relu')(base_model.output)
-x = Dropout(.25)(x)
-predictions = Dense(len(labels), activation='softmax')(x)
+predictions = None
+
+if task == 1:
+    x = Dense(256, activation='relu')(base_model.output)
+    x = Dropout(.25)(x)
+    predictions = Dense(len(labels), activation='softmax')(x)
+
+if task == 2:
+    base_model.layers[-1].trainable = True
+    x = Dense(256, activation='relu')(base_model.output)
+    x = Dropout(.25)(x)
+    predictions = Dense(len(labels), activation='softmax')(x)
+
+if task == 3:
+    for layer in base_model.layers:
+        layer.trainable = True
+    x = Dense(256, activation='relu')(base_model.output)
+    x = Dropout(.25)(x)
+    predictions = Dense(len(labels), activation='softmax')(x)
+
 
 model = Model(inputs=inputs, outputs=predictions)
 
@@ -120,4 +154,4 @@ model.fit_generator(train_generator, epochs=10,
                     validation_steps=len(validation_generator))
 
 # save model
-model.save('model_fc.h5')
+model.save('model_fc_' + str(mode) + '.h5')

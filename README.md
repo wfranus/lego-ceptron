@@ -33,3 +33,9 @@ After this go to `./data` folder and run:
 python split_data.py
 ```
 Additional files `train.csv` and `test.csv` will be created.
+
+## Running
+
+`python src/train_fc.py train|summary 1|2|3|4`
+where `1|2|3|4` is mode described in task description.
+`summary` generates docs, `train` trains the network in given task.
