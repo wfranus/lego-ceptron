@@ -101,7 +101,7 @@ base_model = MobileNetV2(
 
 # freeze all layers of base model
 for layer in base_model.layers:
-    layer.trainable = True  # trainable has to be false in order to freeze the layers
+    layer.trainable = False  # trainable has to be false in order to freeze the layers
 
 x = Dense(256, activation='relu')(base_model.output)
 x = Dropout(.25)(x)
