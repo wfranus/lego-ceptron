@@ -7,6 +7,7 @@ from keras.applications import mobilenet_v2
 from keras.metrics import top_k_categorical_accuracy
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
+from skimage.color import rgb2gray
 from skimage.transform import resize
 from sklearn.utils.multiclass import unique_labels
 
@@ -22,9 +23,12 @@ def preprocess_input_custom(target_size):
     def preprocess_input(img):
         old_size = img.shape[:2]
         ratio = float(target_size) / max(old_size)
-        new_size = tuple([int(x * ratio) for x in old_size])
+        new_size = old_size
 
-        img = resize(img, output_shape=new_size, mode='edge', preserve_range=True)
+        # resize if any dim of the original size is greater than target size
+        if ratio < 1.0:
+            new_size = tuple([int(x * ratio) for x in old_size])
+            img = resize(img, output_shape=new_size, mode='edge', preserve_range=True)
 
         delta_w = target_size - new_size[1]
         delta_h = target_size - new_size[0]
@@ -35,6 +39,11 @@ def preprocess_input_custom(target_size):
         )
 
         img = np.pad(img, padding, 'edge')
+
+        # convert to grayscale, but keep 3 channels
+        img = rgb2gray(img)
+        img = np.stack((img,)*3, axis=-1)
+
         img = mobilenet_v2.preprocess_input(img)
 
         return img
@@ -43,20 +52,23 @@ def preprocess_input_custom(target_size):
 
 
 def create_data_generator(data_dir='./data', split='train',
-                          target_size=192, batch_size=32, seed=0, **kwargs):
+                          target_size=192, batch_size=32, seed=0, shuffle=True):
     assert split in ['train', 'test', 'valid']
 
     if split == 'train':
         # augment train set using transformations of images
         generator = ImageDataGenerator(
             preprocessing_function=preprocess_input_custom(target_size),
-            zoom_range=0.05,
-            width_shift_range=0.05,
-            height_shift_range=0.05,
+            zoom_range=0.2,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
             horizontal_flip=True,
             vertical_flip=True,
-            rotation_range=90,
-            **kwargs
+            rotation_range=180,
+            rescale=1. / 255,
+            zca_whitening=True,
+            featurewise_center=True,
+            featurewise_std_normalization=True,
         )
     else:
         generator = ImageDataGenerator(
@@ -75,7 +87,7 @@ def create_data_generator(data_dir='./data', split='train',
         class_mode='categorical',
         batch_size=batch_size,
         seed=seed,
-        shuffle=kwargs.get('shuffle', True)
+        shuffle=shuffle
     )
 
     return generator
