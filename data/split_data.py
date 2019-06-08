@@ -11,10 +11,12 @@ def split_data(args):
     df = df[df["Folder1"] == img_dir]
 
     # exclude ivalid images
-    # if args.use == 'cropped':
-    #     invalid_images = ['1_Brick_1x1_180708133346.jpg',
-    #                       '1_Brick_1x1_180708133400.jpg']
-    #     df = df[~df["Name"].isin(invalid_images)]
+    if args.use == 'cropped':
+        with open('./outliners.txt', 'r') as f:
+            invalid_images = f.readlines()
+
+        invalid_images = [f.rstrip() for f in invalid_images]
+        df = df[~df["Name"].isin(invalid_images)]
 
     new_df = pd.DataFrame()
     new_df["filename"] = df["Folder1"] + "/" + df["Folder2"] + "/" + df["Name"]
