@@ -17,6 +17,11 @@ if __name__ == '__main__':
     parser.add_argument('-ts', '--target_size', type=int, default=192,
                         choices=[96, 128, 160, 192, 224],
                         help='Target input image size.')
+    parser.add_argument('--plot', action='store_true',
+                        help='If set, plot with history of training will be '
+                             'saved in history_<task>.png')
+    parser.add_argument('--out_dir', help='directory for output files during'
+                                          'evaluation')
 
     args = parser.parse_args()
 
@@ -24,4 +29,3 @@ if __name__ == '__main__':
         train(args)
     elif args.mode == 'predict':
         predict(args)
-        evaluate(args)

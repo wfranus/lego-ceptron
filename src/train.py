@@ -1,8 +1,10 @@
+import matplotlib.pyplot as plt
+
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.layers import Dense, Dropout, Input
 from keras.models import Model
 
-from src.utils import create_data_generator
+from src.utils import create_data_generator, top_5_accuracy
 
 
 def train(args):
@@ -54,13 +56,41 @@ def train(args):
 
     # compile model
     model = Model(inputs=inputs, outputs=predictions)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
+    model.compile(loss='categorical_crossentropy', optimizer='adam',
+                  metrics=['acc', top_5_accuracy])
     model.summary()
 
     # train model
-    model.fit_generator(train_generator,
-                        epochs=args.epochs,
-                        validation_data=valid_generator)
+    history = model.fit_generator(train_generator,
+                                  epochs=args.epochs,
+                                  validation_data=valid_generator)
 
     # save model
     model.save(f'model_fc_{args.task}.h5')
+
+    # plot history of training
+    if args.plot:
+        # Plot accuracy
+        plt.figure(0)
+        plt.plot(history.history['acc'])
+        plt.plot(history.history['top_5_accuracy'])
+        plt.plot(history.history['val_acc'])
+        plt.plot(history.history['val_top_5_accuracy'])
+        plt.title('Model accuracy')
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epoch')
+        plt.legend(['Train top-1', 'Train top-5', 'Valid top-1', 'Valid top-5'],
+                   loc='upper left')
+        # plt.show()
+        plt.savefig(f'history_acc_{args.task}.png')
+
+        # Plot loss
+        plt.figure(1)
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Valid'], loc='upper left')
+        # plt.show()
+        plt.savefig(f'history_loss_{args.task}.png')
