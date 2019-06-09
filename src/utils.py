@@ -25,11 +25,12 @@ def preprocess_input_custom(target_size):
         ratio = float(target_size) / max(old_size)
         new_size = old_size
 
-        # resize if any dim of the original size is greater than target size
+        # scale down if any dim of the original size is greater than target size
         if ratio < 1.0:
             new_size = tuple([int(x * ratio) for x in old_size])
             img = resize(img, output_shape=new_size, mode='edge', preserve_range=True)
 
+        # pad images to the target size
         delta_w = target_size - new_size[1]
         delta_h = target_size - new_size[0]
         padding = (
@@ -38,13 +39,17 @@ def preprocess_input_custom(target_size):
             (0, 0)
         )
 
-        img = np.pad(img, padding, 'edge')
+        img = np.pad(img, padding, 'mean')
 
         # convert to grayscale, but keep 3 channels
-        img = rgb2gray(img)
-        img = np.stack((img,)*3, axis=-1)
+        # img = rgb2gray(img)
+        # img = np.stack((img,)*3, axis=-1)
 
-        img = mobilenet_v2.preprocess_input(img)
+        # special preprocessing for imagenet dataset
+        # changes contrast, scales pixel values, etc.
+        # note: it modifies image IN PLACE
+        # DO NOT USE TOGETHER WITH RESCALE PARAMETER
+        mobilenet_v2.preprocess_input(img)
 
         return img
 
@@ -58,17 +63,17 @@ def create_data_generator(data_dir='./data', split='train',
     if split == 'train':
         # augment train set using transformations of images
         generator = ImageDataGenerator(
-            preprocessing_function=preprocess_input_custom(target_size),
-            zoom_range=0.2,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
+            # preprocessing_function=preprocess_input_custom(target_size),
+            zoom_range=[1.0, 2.0],  # out zoom-out, never zoom-in
+            width_shift_range=0.05,
+            height_shift_range=0.05,
             horizontal_flip=True,
             vertical_flip=True,
             rotation_range=180,
             rescale=1. / 255,
-            zca_whitening=True,
-            featurewise_center=True,
-            featurewise_std_normalization=True,
+            # zca_whitening=True,
+            # featurewise_center=True,
+            # featurewise_std_normalization=True,
         )
     else:
         generator = ImageDataGenerator(
