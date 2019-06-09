@@ -49,7 +49,7 @@ def preprocess_input_custom(target_size):
         # changes contrast, scales pixel values, etc.
         # note: it modifies image IN PLACE
         # DO NOT USE TOGETHER WITH RESCALE PARAMETER
-        mobilenet_v2.preprocess_input(img)
+        # mobilenet_v2.preprocess_input(img)
 
         return img
 
@@ -63,7 +63,7 @@ def create_data_generator(data_dir='./data', split='train',
     if split == 'train':
         # augment train set using transformations of images
         generator = ImageDataGenerator(
-            # preprocessing_function=preprocess_input_custom(target_size),
+            preprocessing_function=preprocess_input_custom(target_size),
             zoom_range=[1.0, 2.0],  # out zoom-out, never zoom-in
             width_shift_range=0.05,
             height_shift_range=0.05,
