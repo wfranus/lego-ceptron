@@ -3,57 +3,16 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+import src.preprocess_pad  # performes monkeypatching of load_img function
+
 from keras.applications import mobilenet_v2
 from keras.metrics import top_k_categorical_accuracy
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
-from skimage.color import rgb2gray
-from skimage.transform import resize
 from sklearn.utils.multiclass import unique_labels
 
-
-def preprocess_input_custom(target_size):
-    """Resize and pad input image, so that ratio between height and width
-    of a lego brick on the image remain unchanged.
-
-    This function should be used instead of **preprocess_input** from
-    keras.applications.mobilenet_v2, because it performs additional
-    preprocessing and calls **preprocess_input** internally.
-    """
-    def preprocess_input(img):
-        old_size = img.shape[:2]
-        ratio = float(target_size) / max(old_size)
-        new_size = old_size
-
-        # scale down if any dim of the original size is greater than target size
-        if ratio < 1.0:
-            new_size = tuple([int(x * ratio) for x in old_size])
-            img = resize(img, output_shape=new_size, mode='edge', preserve_range=True)
-
-        # pad images to the target size
-        delta_w = target_size - new_size[1]
-        delta_h = target_size - new_size[0]
-        padding = (
-            (delta_h // 2, delta_h - (delta_h // 2)),
-            (delta_w // 2, delta_w - (delta_w // 2)),
-            (0, 0)
-        )
-
-        img = np.pad(img, padding, 'mean')
-
-        # convert to grayscale, but keep 3 channels
-        # img = rgb2gray(img)
-        # img = np.stack((img,)*3, axis=-1)
-
-        # special preprocessing for imagenet dataset
-        # changes contrast, scales pixel values, etc.
-        # note: it modifies image IN PLACE
-        # DO NOT USE TOGETHER WITH RESCALE PARAMETER
-        # mobilenet_v2.preprocess_input(img)
-
-        return img
-
-    return preprocess_input
+from src.classes import CLASSES
 
 
 def create_data_generator(data_dir='./data', split='train',
@@ -63,25 +22,28 @@ def create_data_generator(data_dir='./data', split='train',
     if split == 'train':
         # augment train set using transformations of images
         generator = ImageDataGenerator(
-            preprocessing_function=preprocess_input_custom(target_size),
-            zoom_range=[1.0, 2.0],  # out zoom-out, never zoom-in
+            preprocessing_function=mobilenet_v2.preprocess_input,
+            # zoom_range=[1.0, 2.0],  # zoom-out, never zoom-in
             width_shift_range=0.05,
             height_shift_range=0.05,
             horizontal_flip=True,
             vertical_flip=True,
-            rotation_range=180,
-            rescale=1. / 255,
+            rotation_range=90,
+
+            # transformations below require fitting generator on training data first!
             # zca_whitening=True,
             # featurewise_center=True,
             # featurewise_std_normalization=True,
         )
     else:
         generator = ImageDataGenerator(
-            preprocessing_function=preprocess_input_custom(target_size),
+            preprocessing_function=mobilenet_v2.preprocess_input,
         )
 
+    # load dataframe with paths to imgs and labels
     df = pd.read_csv(os.path.join(data_dir, f'{split}.csv'), dtype=str)
 
+    # create data iterator that loads imgs in batch and aplies transformations
     generator = generator.flow_from_dataframe(
         dataframe=df,
         directory=data_dir,
@@ -92,7 +54,8 @@ def create_data_generator(data_dir='./data', split='train',
         class_mode='categorical',
         batch_size=batch_size,
         seed=seed,
-        shuffle=shuffle
+        shuffle=shuffle,
+        classes=CLASSES
     )
 
     return generator

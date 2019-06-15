@@ -14,7 +14,7 @@ if __name__ == '__main__':
                         help='Number of training epochs')
     parser.add_argument('-b', '--batch_size', type=int, default=32,
                         help='Batch size')
-    parser.add_argument('-ts', '--target_size', type=int, default=160,
+    parser.add_argument('-ts', '--target_size', type=int, default=128,
                         choices=[96, 128, 160, 192, 224],
                         help='Target input image size.')
     parser.add_argument('--plot', action='store_true',

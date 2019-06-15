@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from keras.applications.mobilenet_v2 import MobileNetV2
 from keras.layers import Dense, Dropout, Input
 from keras.models import Model
+from keras.optimizers import Nadam
 
 from src.utils import create_data_generator, top_5_accuracy
 
@@ -55,17 +56,22 @@ def train(args):
     if args.task == 4:
         raise NotImplementedError
 
-    # always train last fully-connected layers
-    x = Dense(1024, activation='relu')(base_model.output)
-    x = Dropout(.4)(x)
+    # always train last fully-connected layers (classifier)
+    # x = Dropout(.2)(base_model.output)
+    x = Dense(256, activation='relu')(base_model.output)
+    # x = Dropout(.5)(x)
+    # x = Dense(512, activation='relu')(x)
+    # x = Dense(512, activation='relu')(x)
+    # x = Dense(256, activation='relu')(x)
+    x = Dropout(.5)(x)
     num_classes = len(train_generator.class_indices)
     predictions = Dense(num_classes, activation='softmax')(x)
 
     # compile model
     model = Model(inputs=inputs, outputs=predictions)
-    model.compile(loss='categorical_crossentropy', optimizer='adam',
+    model.compile(loss='categorical_crossentropy', optimizer=Nadam(),
                   metrics=['acc', top_5_accuracy])
-    model.summary()
+    # model.summary()
 
     # train model
     history = model.fit_generator(train_generator,

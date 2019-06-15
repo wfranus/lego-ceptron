@@ -1,12 +1,12 @@
 import os
 import numpy as np
 
-from keras.preprocessing.image import img_to_array, load_img
 from keras.models import load_model, Model
 from sklearn.metrics import accuracy_score, classification_report, zero_one_loss
 
-from src.utils import create_data_generator, preprocess_input_custom
+from src.utils import create_data_generator
 from src.utils import plot_confusion_matrix, top_5_accuracy, top_k_accuracy_score
+from src.preprocess_pad import load_and_pad_img
 
 
 def predict(args):
@@ -75,11 +75,10 @@ def predict(args):
 
 # for debugging
 def predict_one(img_path, task):
-    model: Model = load_model(f'model_fc_{task}.h5')
+    model: Model = load_model(f'model_fc_{task}.h5',
+                              custom_objects={'top_5_accuracy': top_5_accuracy})
 
-    img = load_img(img_path)
-    x = img_to_array(img)
-    x = preprocess_input_custom(192)(x)
+    x = load_and_pad_img(img_path, target_size=(128, 128))
     x = np.expand_dims(x, axis=0)
     preds = model.predict(x)
 
@@ -89,4 +88,4 @@ def predict_one(img_path, task):
 
 
 if __name__ == '__main__':
-    predict_one('data/Cropped Images/Plate_1x1_Slope/1_Plate_1x1_Slope_180715175157.jpg', 1)
+    predict_one('data/Cropped Images/Brick_2x2_L/1_Brick_2x2_L_180708213653.jpg', 1)

@@ -32,6 +32,10 @@ def split_data(args):
     valid_df.reset_index(drop=True, inplace=True)
     test_df.reset_index(drop=True, inplace=True)
 
+    assert train_df["brick_type"].nunique() == 20
+    assert valid_df["brick_type"].nunique() == 20
+    assert test_df["brick_type"].nunique() == 20
+
     train_df.to_csv("./train.csv", index=False)
     valid_df.to_csv("./valid.csv", index=False)
     test_df.to_csv("./test.csv", index=False)
