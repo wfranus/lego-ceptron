@@ -57,12 +57,8 @@ def train(args):
         raise NotImplementedError
 
     # always train last fully-connected layers (classifier)
-    # x = Dropout(.2)(base_model.output)
-    x = Dense(256, activation='relu')(base_model.output)
-    # x = Dropout(.5)(x)
-    # x = Dense(512, activation='relu')(x)
-    # x = Dense(512, activation='relu')(x)
-    # x = Dense(256, activation='relu')(x)
+    x = Dropout(.2)(base_model.output)
+    x = Dense(256, activation='relu')(x)
     x = Dropout(.5)(x)
     num_classes = len(train_generator.class_indices)
     predictions = Dense(num_classes, activation='softmax')(x)

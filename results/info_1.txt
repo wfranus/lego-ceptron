@@ -1,0 +1,5 @@
+command:
+python src/run.py train 1 -e 50 -b 1024 -ts 128 --plot
+
+classifier:
+dropout 0.2 + Dense(256) + dropout 0.5 + softmax
