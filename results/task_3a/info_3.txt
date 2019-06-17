@@ -1,0 +1,5 @@
+command:
+python src/run.py train 3 -e 20 -b 300 -ts 128 --plot
+
+optimizer: SGD(lr=2e-4, momentum=0.9, nesterov=True)
+model: used model from task 2
