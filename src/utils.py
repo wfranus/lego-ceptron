@@ -1,4 +1,6 @@
 import os
+import signal
+import logging
 
 import numpy as np
 import pandas as pd
@@ -7,6 +9,7 @@ import matplotlib.pyplot as plt
 import src.preprocess_pad  # performes monkeypatching of load_img function
 
 from keras.applications import mobilenet_v2
+from keras.callbacks import Callback
 from keras.metrics import top_k_categorical_accuracy
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
@@ -59,6 +62,11 @@ def create_data_generator(data_dir='./data', split='train',
     )
 
     return generator
+
+
+def get_labels(data_dir='./data', split='train'):
+    df = pd.read_csv(os.path.join(data_dir, f'{split}.csv'), dtype=str)
+    return df['brick_type'].values
 
 
 def top_5_accuracy(y_true, y_pred):
@@ -141,3 +149,28 @@ def plot_confusion_matrix(y_true, y_pred, classes, path=None, title=None,
         plt.savefig(path)
 
     return ax
+
+
+class SignalStopping(Callback):
+    def __init__(self, verbose=0):
+        super(SignalStopping, self).__init__()
+        self.signal_received = False
+        self.verbose = verbose
+        self.stopped_epoch = 0
+
+        def signal_handler(sig, frame):
+            self.signal_received = True
+            print('Manual stop of training requested. '
+                  'Stopping at end of the current epoch...')
+
+        signal.signal(signal.SIGQUIT, signal_handler)
+
+    def on_epoch_end(self, epoch, logs={}):
+        if self.signal_received:
+            self.stopped_epoch = epoch
+            self.model.stop_training = True
+
+    def on_train_end(self, logs={}):
+        if self.stopped_epoch > 0 and self.verbose > 0:
+            print(f'Epoch {self.stopped_epoch}: stopping due to signal received')
+
