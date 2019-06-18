@@ -11,8 +11,8 @@ from keras.optimizers import Nadam, SGD
 from thundersvm import SVC
 
 from src.classes import CLASSES
-from src.utils import create_data_generator, top_5_accuracy, SignalStopping
-from src.utils import get_labels
+from src.utils import create_data_generator, top_5_accuracy, top_k_accuracy_score
+from src.utils import get_labels, SignalStopping
 from src.custom_mobilenet_v2 import MobileNetV2 as CustomMobileNetV2
 
 
@@ -162,11 +162,10 @@ def train(args):
         # and retrain
 
         train_features = None
-        valid_features = None
 
         # extract features using model from task 3a, if not already extracted
         if not os.path.isfile('train_features_3b.npy')\
-            or not os.path.isfile('valid_features_3b.npy'):
+            or not os.path.isfile('test_features_3b.npy'):
             base_model = load_prev_model('model_fc_3a.h5')
             model = Model(inputs=base_model.input,
                           outputs=base_model.get_layer('global_average_pooling2d_1').output)
@@ -177,43 +176,41 @@ def train(args):
             print('Extracted train features shape:', train_features.shape)
             np.save('train_features_3b.npy', train_features)
 
-            # extract features for samples from validation set
-            valid_generator.shuffle = False
-            valid_features = model.predict_generator(generator=valid_generator)
-            print('Extracted valid features shape:', valid_features.shape)
-            np.save('valid_features_3b.npy', valid_features)
+            # extract features for samples from test set
+            test_generator = create_data_generator(split='test',
+                                                   target_size=args.target_size,
+                                                   batch_size=args.batch_size,
+                                                   shuffle=False)
+            test_features = model.predict_generator(generator=test_generator)
+            print('Extracted test features shape:', test_features.shape)
+            np.save('test_features_3b.npy', test_features)
 
         if train_features is None:
             train_features = np.load('train_features_3b.npy')
 
-        if valid_features is None:
-            valid_features = np.load('valid_features_3b.npy')
-
         train_labels = get_labels(split='train')
-        train_y = [CLASSES.index(l) for l in train_labels]
-        valid_labels = get_labels(split='valid')
-        valid_y = [CLASSES.index(l) for l in valid_labels]
+        train_y = np.array([CLASSES.index(l) for l in train_labels])
         print('Train labels shape:', train_labels.shape)
-        print('Valid labels shape:', valid_labels.shape)
 
-        if args.task == '4a':
-            svc = SVC(kernel='linear', decision_function_shape='ovo',
-                      gpu_id=args.gpu_id, verbose=True, random_state=42)
-        elif args.task == '4b':
-            svc = SVC(kernel='polynomial', degree=2, decision_function_shape='ovo',
-                      gpu_id=args.gpu_id, verbose=True, random_state=42)
-        else:
-            svc = SVC(kernel='sigmoid', decision_function_shape='ovo',
-                      gpu_id=args.gpu_id, verbose=True, random_state=42)
+        for c in [0.1, 1.0, 10, 100, 1000]:
+            if args.task == '4a':
+                kernel = 'linear'
+                svc = SVC(C=c, kernel=kernel, decision_function_shape='ovo',
+                          gpu_id=args.gpu_id, random_state=42)
+            elif args.task == '4b':
+                kernel = 'polynomial'
+                svc = SVC(C=c, kernel=kernel, degree=2,
+                          decision_function_shape='ovo',
+                          gpu_id=args.gpu_id, random_state=42)
+            else:
+                kernel = 'rbf'
+                svc = SVC(C=c, kernel=kernel, decision_function_shape='ovo',
+                          gpu_id=args.gpu_id, random_state=42)
 
-        svc.fit(train_features, train_y)
-        svc.save_to_file(f'svc_{args.task}')
-
-        train_acc = svc.score(train_features, train_y)
-        valid_acc = svc.score(valid_features, valid_y)
-        print(f'Top-1 acc train: {train_acc:.3} / Top-1 acc valid: {valid_acc:.3}')
-
-        # TODO use predict_proba and compute top-5 accuracies
+            print(f'Training SVC({kernel})...')
+            svc.fit(train_features, train_y)
+            print(f'Saving trained model to: svc_{args.task}_C_{c}')
+            svc.save_to_file(f'svc_{args.task}_C_{c}')
 
         return
 

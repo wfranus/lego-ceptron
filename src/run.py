@@ -14,7 +14,7 @@ if __name__ == '__main__':
                         '3b - train whole model with last conv block removed, '
                         '4a - train SVC (linear) on features from last conv, '
                         '4b - train SVC (polynomial) on features from last conv, '
-                        '4c - train SVC (sigmoid) on features from last conv.')
+                        '4c - train SVC (rbf) on features from last conv.')
     parser.add_argument('-e', '--epochs', type=int, default=10,
                         help='Number of training epochs')
     parser.add_argument('-b', '--batch_size', type=int, default=32,
