@@ -192,7 +192,7 @@ def train(args):
         train_y = np.array([CLASSES.index(l) for l in train_labels])
         print('Train labels shape:', train_labels.shape)
 
-        for c in [0.1, 1.0, 10, 100, 1000]:
+        for c in [0.001, 0.01, 0.1, 1.0, 10]:
             if args.task == '4a':
                 kernel = 'linear'
                 svc = SVC(C=c, kernel=kernel, decision_function_shape='ovo',

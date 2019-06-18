@@ -29,7 +29,7 @@ def predict(args):
 
         out_dir = args.out_dir or f'results_{args.task}'
 
-        for c in [0.1, 1.0, 10, 100, 1000]:
+        for c in [0.001, 0.01, 0.1, 1.0, 10]:
             svc = SVC()
             svc.load_from_file(f'svc_{args.task}_C_{c}')
 
