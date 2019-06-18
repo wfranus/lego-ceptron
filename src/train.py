@@ -118,7 +118,8 @@ def train(args):
         for layer in model.layers:
             layer.trainable = True
 
-        model.save('model_fc_3a.h5')
+        model.compile(loss=loss, metrics=metrics,
+                      optimizer=SGD(lr=2e-4, momentum=0.9, nesterov=True))
 
     elif args.task == '3b':
         # In task 3b we use pre-trained model from task 3a and remove the last
