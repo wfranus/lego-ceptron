@@ -1,0 +1,4 @@
+command:
+python src/run.py train 2 -e 50 -b 1500 -ts 128 --plot
+
+optimizer: Nadam(lr=2e-4)
